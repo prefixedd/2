@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Happy Birthday 🎉</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <script src="./file/jquery.min.js"></script>
+  <script src="./file/jscex.min.js"></script>
+  <script src="./file/jscex-parser.js"></script>
+  <script src="./file/jscex-jit.js"></script>
+  <script src="./file/jscex-builderbase.min.js"></script>
+  <script src="./file/jscex-async.min.js"></script>
+  <script src="./file/jscex-async-powerpack.min.js"></script>
+  <script src="./file/functions.js" charset="utf-8"></script>
+  <script src="./file/love.js" charset="utf-8"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ===================== SHARED ===================== */
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #0d0d1a;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* ===================== INTRO SCREEN ===================== */
+    #intro-screen {
+      position: fixed;
+      inset: 0;
+      background: #0d0d1a;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      transition: opacity 1.2s ease, transform 1.2s ease;
+      overflow: hidden;
+    }
+
+    #intro-screen.fade-out {
+      opacity: 0;
+      transform: scale(1.05);
+      pointer-events: none;
+    }
+
+    #wrap {
+      position: relative;
+      margin: 0 auto;
+      width: 1100px;
+      height: 680px;
+      margin-top: 10px;
+    }
+
+    #text {
+      width: 272px;
+      height: 560px;
+      left: 188px;
+      top: 80px;
+      position: absolute;
+    }
+
+    #code {
+      display: none;
+      color: rgb(255, 192, 203);
+      font-size: 17px;
+      margin-top: 70px;
+      line-height: 30px;
+      font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    #canvas {
+      margin: 0 auto;
+      width: 1100px;
+      height: 680px;
+      cursor: default;
+    }
+
+    #canvas.hand { cursor: pointer; }
+
+    /* "Continue" button that fades in after typewriter */
+    #continue-btn {
+      display: none;
+      opacity: 0;
+      margin-top: 1.5rem;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      border: none;
+      border-radius: 50px;
+      padding: 0.9rem 2.8rem;
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 1s ease, transform 0.2s;
+      box-shadow: 0 4px 24px rgba(219,39,119,0.5);
+      position: relative;
+      z-index: 10;
+    }
+
+    #continue-btn.visible {
+      display: block;
+      opacity: 1;
+    }
+
+    #continue-btn:hover { transform: scale(1.05); }
+    #continue-btn:active { transform: scale(0.97); }
+
+    /* click-seed hint */
+    #seed-hint {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #f472b688;
+      font-size: 0.95rem;
+      animation: pulse-hint 2s infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes pulse-hint {
+      from { opacity: 0.4; }
+      to   { opacity: 1; }
+    }
+
+    /* ===================== BIRTHDAY SITE ===================== */
+    #bday-site {
+      display: none;
+      opacity: 0;
+      transition: opacity 1.2s ease;
+    }
+
+    #bday-site.visible {
+      display: block;
+      opacity: 1;
+    }
+
+    /* confetti */
+    #confetti-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* floating hearts */
+    .floating-hearts {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .fheart {
+      position: absolute;
+      animation: float-up linear infinite;
+      opacity: 0;
+    }
+
+    @keyframes float-up {
+      0%   { transform: translateY(100vh) rotate(0deg);   opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.4; }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* nav dots */
+    .nav-dots {
+      position: fixed;
+      right: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      z-index: 100;
+    }
+
+    .nav-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #7c3aed44;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid #7c3aed88;
+    }
+
+    .nav-dot.active { background: #f472b6; border-color: #f472b6; transform: scale(1.4); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+      background: radial-gradient(ellipse at 50% 40%, #1a0a2e 0%, #0d0d1a 70%);
+      overflow: hidden;
+    }
+
+    .stars-bg { position: absolute; inset: 0; pointer-events: none; }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: #fff;
+      animation: twinkle 2s infinite alternate;
+    }
+
+    @keyframes twinkle {
+      from { opacity: 0.2; transform: scale(1); }
+      to   { opacity: 1;   transform: scale(1.3); }
+    }
+
+    .hero-emoji {
+      font-size: 5rem;
+      margin-bottom: 1rem;
+      animation: bounce 1.5s infinite alternate;
+      display: block;
+      position: relative; z-index: 1;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-18px); }
+    }
+
+    .hero-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      background: linear-gradient(135deg, #ff6fd8, #ffcc44, #44e5ff, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      animation: shimmer 3s infinite;
+      background-size: 300%;
+      position: relative; z-index: 1;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .hero-subtitle {
+      font-size: 1.3rem;
+      color: #c084fc;
+      margin-bottom: 2.5rem;
+      font-weight: 600;
+      position: relative; z-index: 1;
+    }
+
+    .date-badge {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      border-radius: 50px;
+      padding: 0.7rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 2rem;
+      display: inline-block;
+      animation: pulse-glow 2s infinite;
+      position: relative; z-index: 1;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(168,85,247,0.4); }
+      50%       { box-shadow: 0 0 45px rgba(219,39,119,0.7); }
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      color: #a78bfa;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      animation: fade-bounce 2s infinite;
+      z-index: 1;
+    }
+
+    @keyframes fade-bounce {
+      0%, 100% { opacity: 0.4; transform: translateY(0); }
+      50%       { opacity: 1;   transform: translateY(6px); }
+    }
+
+    /* SECTIONS */
+    .section {
+      padding: 5rem 1.5rem;
+      max-width: 820px;
+      margin: 0 auto;
+      scroll-margin-top: 2rem;
+    }
+
+    .section-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #a78bfa;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      margin-bottom: 2rem;
+      background: linear-gradient(90deg, #f472b6, #facc15);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #7c3aed, #db2777, transparent);
+    }
+
+    /* LETTER */
+    .letter-card {
+      background: linear-gradient(135deg, #1e1040, #2d1060);
+      border: 1px solid #7c3aed44;
+      border-radius: 20px;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .letter-card::before {
+      content: '"';
+      position: absolute;
+      top: -0.5rem; left: 1.5rem;
+      font-family: 'Fredoka One', cursive;
+      font-size: 8rem;
+      color: #7c3aed22;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .letter-text {
+      font-size: 1.05rem;
+      line-height: 1.9;
+      color: #e2c5ff;
+      position: relative;
+      z-index: 1;
+    }
+
+    .letter-text p { margin-bottom: 1rem; }
+    .letter-text p:last-child { margin-bottom: 0; }
+
+    .letter-sig {
+      margin-top: 1.5rem;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.4rem;
+      color: #f472b6;
+    }
+
+    /* MEMORIES */
+    .memories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .memory-card {
+      background: linear-gradient(135deg, #1a0a3a, #160830);
+      border-radius: 18px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: default;
+    }
+
+    .memory-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      padding: 1px;
+      background: linear-gradient(135deg, #7c3aed, #db2777, #facc15);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .memory-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(168,85,247,0.3); }
+    .memory-emoji { font-size: 2.5rem; margin-bottom: 0.8rem; display: block; }
+
+    .memory-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.15rem;
+      color: #f472b6;
+      margin-bottom: 0.5rem;
+    }
+
+    .memory-text { font-size: 0.95rem; color: #c4a4e8; line-height: 1.6; }
+
+    /* GALLERY */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .photo-slot {
+      aspect-ratio: 1;
+      border-radius: 14px;
+      border: 2px dashed #7c3aed66;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #7c3aed99;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 1rem;
+      gap: 0.4rem;
+      background: #1a0a2e55;
+      transition: all 0.3s;
+    }
+
+    .photo-slot:hover { border-color: #a78bfa; background: #2d1060aa; color: #c084fc; }
+    .photo-slot-icon { font-size: 2rem; }
+
+    /* VIDEOS */
+    .video-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; }
+
+    .video-slot {
+      background: #1a0a2e;
+      border-radius: 18px;
+      border: 1px solid #7c3aed44;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .video-slot:hover { border-color: #a78bfa; background: #200e40; }
+    .video-slot-icon  { font-size: 3rem; margin-bottom: 0.8rem; display: block; }
+
+    .video-slot-title { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: #f472b6; margin-bottom: 0.4rem; }
+    .video-slot-sub   { font-size: 0.85rem; color: #9d79c0; }
+
+    /* SONG */
+    .song-card {
+      background: linear-gradient(135deg, #0f0520, #1a0833);
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      border: 1px solid #7c3aed33;
+    }
+
+    .song-disc {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, #7c3aed, #db2777, #facc15, #44e5ff, #7c3aed);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: spin 4s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .song-disc-inner { width: 36px; height: 36px; border-radius: 50%; background: #0f0520; }
+    .song-info       { flex: 1; }
+    .song-label      { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: #a78bfa; font-weight: 700; margin-bottom: 0.3rem; }
+    .song-title      { font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: #fff; margin-bottom: 0.2rem; }
+    .song-artist     { font-size: 0.95rem; color: #c084fc; margin-bottom: 0.3rem; }
+    .song-lyric      { font-size: 0.9rem; color: #9d79c0; font-style: italic; margin-bottom: 0.7rem; }
+
+    .song-link {
+      display: inline-block;
+      background: linear-gradient(135deg, #1db954, #157a38);
+      border-radius: 50px;
+      padding: 0.4rem 1.2rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+
+    .song-link:hover { transform: scale(1.05); }
+
+    /* COUNTDOWN */
+    .countdown-wrap { text-align: center; }
+
+    .countdown-title { font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: #f472b6; margin-bottom: 1.5rem; }
+
+    .countdown-grid { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+
+    .countdown-unit {
+      background: linear-gradient(135deg, #2d1060, #1a0a3a);
+      border-radius: 16px;
+      padding: 1.5rem 1.8rem;
+      min-width: 90px;
+      border: 1px solid #7c3aed55;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .countdown-unit::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #7c3aed, #db2777, #facc15);
+    }
+
+    .countdown-num   { font-family: 'Fredoka One', cursive; font-size: 2.8rem; color: #fff; display: block; line-height: 1; }
+    .countdown-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: #a78bfa; font-weight: 700; margin-top: 0.4rem; display: block; }
+
+    /* FOOTER */
+    .footer { text-align: center; padding: 4rem 2rem 3rem; }
+
+    .footer-big {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      background: linear-gradient(135deg, #ff6fd8, #ffcc44, #44e5ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.8rem;
+      background-size: 200%;
+      animation: shimmer 3s infinite;
+    }
+
+    .footer-sub    { color: #9d79c0; font-size: 1rem; margin-bottom: 2rem; }
+    .footer-emojis { font-size: 2.5rem; letter-spacing: 0.5rem; }
+
+    /* music toggle btn */
+    #music-btn {
+      position: fixed;
+      bottom: 1.5rem; right: 1.5rem;
+      z-index: 200;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      border-radius: 50%;
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(219,39,119,0.5);
+      transition: transform 0.2s;
+      display: none;
+    }
+
+    #music-btn:hover { transform: scale(1.1); }
+
+    /* ===================== MEMORIES REEL ===================== */
+    #memories-reel {
+      background: #080612;
+      padding: 5rem 0 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .reel-header {
+      text-align: center;
+      padding: 0 1.5rem 3rem;
+    }
+
+    .reel-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #a78bfa;
+      margin-bottom: 0.5rem;
+    }
+
+    .reel-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      background: linear-gradient(90deg, #f472b6, #facc15, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* SLIDESHOW */
+    .slideshow-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 780px;
+      margin: 0 auto 2rem;
+      aspect-ratio: 16/9;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(168,85,247,0.3);
+      background: #0d0d1a;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.9s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide.active { opacity: 1; }
+
+    .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #0d0d1a;
+    }
+
+    .slide video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    /* slide counter + nav */
+    .slideshow-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .slide-btn {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      border: none;
+      border-radius: 50%;
+      width: 44px; height: 44px;
+      font-size: 1.2rem;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(219,39,119,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .slide-btn:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(219,39,119,0.6); }
+    .slide-btn:active { transform: scale(0.95); }
+
+    .slide-counter {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.1rem;
+      color: #c084fc;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .slide-caption {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #9d79c0;
+      font-style: italic;
+      margin-bottom: 0.5rem;
+      min-height: 1.4rem;
+      padding: 0 1rem;
+    }
+
+    /* dot indicators */
+    .slide-dots {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      padding: 0 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .slide-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #7c3aed44;
+      border: 1px solid #7c3aed88;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .slide-dot.active { background: #f472b6; border-color: #f472b6; transform: scale(1.4); }
+
+    /* video badge */
+    .video-badge {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: rgba(219,39,119,0.85);
+      border-radius: 50px;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #fff;
+      z-index: 2;
+    }
+
+    @media (max-width: 1150px) {
+      #wrap { width: 100%; }
+      #canvas { width: 100%; height: auto; }
+    }
+
+    @media (max-width: 600px) {
+      .gallery-grid  { grid-template-columns: repeat(2, 1fr); }
+      .song-card     { flex-direction: column; text-align: center; }
+      .nav-dots      { display: none; }
+      .slideshow-wrap { border-radius: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== INTRO SCREEN ==================== -->
+  <div id="intro-screen">
+    <div id="wrap">
+      <div id="text">
+        <div id="code">
+          <span class="say">Hey Prefixed... 🌸</span><br>
+          <span class="say">Happy Birthday 🎂</span><br>
+          <span class="say">Years of you in my life 💜</span><br>
+          <span class="say">Thank you..</span><br>
+        </div>
+      </div>
+      <canvas id="canvas" width="1100" height="680"></canvas>
+    </div>
+    <div id="seed-hint">✨ Click the glowing heart to begin ✨</div>
+  </div>
+
+  <!-- ==================== AUDIO ==================== -->
+  <!--
+    Place your Timeless MP3 in the same folder as index.html and name it: timeless.mp3
+    OR rename aud.mp3 to timeless.mp3 (the original aud.mp3 from the zip also works — just rename it)
+  -->
+  <audio id="bg-music" loop>
+    <source src="timeless.mp3" type="audio/mpeg"/>
+    <source src="aud.mp3" type="audio/mpeg"/>
+  </audio>
+
+  <!-- ==================== BIRTHDAY SITE ==================== -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <div id="bday-site">
+    <div class="floating-hearts" id="hearts-container"></div>
+
+    <nav class="nav-dots" id="nav-dots">
+      <div class="nav-dot active" onclick="scrollToSection(0)" title="Home"></div>
+      <div class="nav-dot"        onclick="scrollToSection(1)" title="Letter"></div>
+      <div class="nav-dot"        onclick="scrollToSection(2)" title="Memories"></div>
+      <div class="nav-dot"        onclick="scrollToSection(3)" title="Gallery"></div>
+      <div class="nav-dot"        onclick="scrollToSection(4)" title="Videos"></div>
+      <div class="nav-dot"        onclick="scrollToSection(5)" title="Music"></div>
+      <div class="nav-dot"        onclick="scrollToSection(6)" title="Countdown"></div>
+      <div class="nav-dot"        onclick="scrollToSection(7)" title="Memories Reel"></div>
+    </nav>
+
+    <!-- HERO -->
+    <section id="s0" style="scroll-margin-top:0">
+      <div class="hero">
+        <div class="stars-bg" id="stars-bg"></div>
+        <span class="hero-emoji">🎂</span>
+        <h1 class="hero-title">Happy Birthday<br>Prefixed!</h1>
+        <p class="hero-subtitle">Me — the one and only ✨</p>
+        <div class="date-badge">🗓 This is MY day!</div>
+        <div class="scroll-hint"><span>scroll down</span><span>↓</span></div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- LETTER -->
+    <section id="s1" class="section">
+      <div class="section-label">from the heart</div>
+      <div class="section-title">A letter to you 💌</div>
+      <div class="letter-card">
+        <div class="letter-text">
+          <p>Hey Prefixed,</p>
+          <p>To the one who makes the chaotic days a whole lot brighter and the good days even better. Honestly, I don’t say it enough, but having you in my corner means the world to me. Thank you for being the person I can always turn to, for staying through all my messy moments, and for bringing so much genuine light into my life.</p>
+          <p>From the endless late-night calls to the absolute best, most ridiculous laughs, every single memory with you is a favorite of mine. You have this rare way of making everything better just by being yourself, and you deserve all the best energy, love, and happiness the world has to offer today. Happy birthday to my favorite human—I hope your day is as incredible as you are.</p>
+        </div>
+        <div class="letter-sig">— your biggest mess 😅</div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- MEMORIES -->
+    <section id="s2" class="section">
+      <div class="section-label">our story</div>
+      <div class="section-title">Moments I'll never forget 😂💜</div>
+      <div class="memories-grid">
+        <div class="memory-card">
+          <span class="memory-emoji">🦎💨</span>
+          <div class="memory-title">First Moment</div>
+          <div class="memory-text">Description</div>
+        </div>
+        <div class="memory-card">
+          <span class="memory-emoji">🎮🤝</span>
+          <div class="memory-title">Second Moment</div>
+          <div class="memory-text">Description</div>
+        </div>
+        <div class="memory-card">
+          <span class="memory-emoji">🎙️</span>
+          <div class="memory-title">Third Moment</div>
+          <div class="memory-text">Description</div>
+        </div>
+        <div class="memory-card">
+          <span class="memory-emoji">🧎‍♂️👑</span>
+          <div class="memory-title">Fourth Moment</div>
+          <div class="memory-text">Description</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- GALLERY -->
+    <section id="s3" class="section">
+      <div class="section-label">us through time</div>
+      <div class="section-title">Photo Gallery 📸</div>
+      <div class="gallery-grid">
+        <img src="memories/1.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/2.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/3.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/4.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/5.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/6.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/7.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/8.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/9.png"                    alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/10.png"                   alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+        <img src="memories/11.png"                   alt="Memory" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;"/>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- VIDEOS -->
+    <section id="s4" class="section">
+      <div class="section-label">our clips</div>
+      <div class="section-title">The Recordings 🎬</div>
+      <div class="video-slots">
+        <div class="video-slot" style="padding:0;overflow:hidden;">
+          <video controls style="width:100%;border-radius:18px;display:block;">
+            <source src="memories/vid1.mp4" type="video/mp4"/>
+          </video>
+          <div style="padding:1rem;">
+            <div class="video-slot-title">✌️ First Video Heading </div>
+            <div class="video-slot-sub">Description</div>
+          </div>
+        </div>
+        <div class="video-slot" style="padding:0;overflow:hidden;">
+          <video controls style="width:100%;border-radius:18px;display:block;">
+            <source src="memories/vid2.mp4" type="video/mp4"/>
+          </video>
+          <div style="padding:1rem;">
+            <div class="video-slot-title">🎙️ Second Video Heading</div>
+            <div class="video-slot-sub">Description</div>
+          </div>
+        </div>
+        <div class="video-slot" style="padding:0;overflow:hidden;">
+          <video controls style="width:100%;border-radius:18px;display:block;">
+            <source src="memories/vid3.mp4" type="video/mp4"/>
+          </video>
+          <div style="padding:1rem;">
+            <div class="video-slot-title">🥀 Third Video Heading</div>
+            <div class="video-slot-sub">Description</div>
+          </div>
+        </div>
+        <div class="video-slot" style="padding:0;overflow:hidden;">
+          <video controls style="width:100%;border-radius:18px;display:block;">
+            <source src="memories/vid4.mp4" type="video/mp4"/>
+          </video>
+          <div style="padding:1rem;">
+            <div class="video-slot-title">🎮 Fourth Video</div>
+            <div class="video-slot-sub">Description</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- SONG -->
+    <section id="s5" class="section">
+      <div class="section-label">currently on repeat</div>
+      <div class="section-title">Her Song 🎵</div>
+      <div class="song-card">
+        <div class="song-disc"><div class="song-disc-inner"></div></div>
+        <div class="song-info">
+          <div class="song-label">bio song dedication</div>
+          <div class="song-title">Timeless</div>
+          <div class="song-artist">The Weeknd feat. Playboi Carti</div>
+          <div class="song-lyric">"Ever since I was a kid, I been legit" 🖤</div>
+          <a href="https://open.spotify.com/album/2IRxVVqbSbqHJo8Zx50LYn"
+             target="_blank" class="song-link">
+            Listen on Spotify 🎧
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- COUNTDOWN -->
+    <section id="s6" class="section">
+      <div class="section-label">coming up</div>
+      <div class="section-title">Birthday Countdown ⏳</div>
+      <div class="countdown-wrap">
+        <div class="countdown-title" id="countdown-title">Until June 18th...</div>
+        <div class="countdown-grid">
+          <div class="countdown-unit"><span class="countdown-num" id="cd-days">--</span><span class="countdown-label">Days</span></div>
+          <div class="countdown-unit"><span class="countdown-num" id="cd-hours">--</span><span class="countdown-label">Hours</span></div>
+          <div class="countdown-unit"><span class="countdown-num" id="cd-mins">--</span><span class="countdown-label">Minutes</span></div>
+          <div class="countdown-unit"><span class="countdown-num" id="cd-secs">--</span><span class="countdown-label">Seconds</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- MEMORIES REEL -->
+    <div id="memories-reel" id="s7">
+      <div class="reel-header">
+        <div class="reel-label">the best part</div>
+        <div class="reel-title">Our Memories 🎞️🩷</div>
+      </div>
+
+      <div class="slideshow-wrap" id="slideshow-wrap">
+        <!-- IMAGES -->
+        <div class="slide active" data-caption="🩷">
+          <img src="memories/1.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="✨">
+          <img src="memories/2.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="Us 💜">
+          <img src="memories/3.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="Us 🌸">
+          <img src="memories/4.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="Us 💫">
+          <img src="memories/5.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="Us 🩷">
+          <img src="memories/6.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="✨">
+          <img src="memories/7.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="💕">
+          <img src="memories/8.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="🌟">
+          <img src="memories/9.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="💜">
+          <img src="memories/10.png" alt="Memory"/>
+        </div>
+        <div class="slide" data-caption="🎮 Oct 2024">
+          <img src="memories/11.png" alt="Memory"/>
+        </div>
+      </div>
+
+      <div class="slide-caption" id="slide-caption">Us 🩷</div>
+
+      <div class="slideshow-controls">
+        <button class="slide-btn" onclick="prevSlide()">‹</button>
+        <span class="slide-counter" id="slide-counter">1 / 13</span>
+        <button class="slide-btn" onclick="nextSlide()">›</button>
+      </div>
+
+      <div class="slide-dots" id="slide-dots"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <footer class="footer">
+      <div class="footer-big">Happy Birthday Prefixed! 🎉🩷</div>
+      <div class="footer-sub">Wishing you the most wonderful year yet ✨</div>
+      <div class="footer-emojis">🎂🎊🎈🩷🌟</div>
+    </footer>
+  </div>
+
+  <!-- floating music button (shown after intro) -->
+  <div id="music-btn" onclick="toggleMusic()" title="Toggle music">🎵</div>
+
+  <!-- ==================== SCRIPTS ==================== -->
+  <script>
+    // ---- TREE INTRO ----
+    (function() {
+      var canvas = $('#canvas');
+      if (!canvas[0].getContext) return;
+
+      var width  = canvas.width();
+      var height = canvas.height();
+      canvas.attr("width", width);
+      canvas.attr("height", height);
+
+      var opts = {
+        seed: { x: width / 2 - 20, color: "rgb(190, 26, 37)", scale: 2 },
+        branch: [
+          [535, 680, 570, 250, 500, 200, 30, 100, [
+            [540, 500, 455, 417, 340, 400, 13, 100, [
+              [450, 435, 434, 430, 394, 395, 2, 40]
+            ]],
+            [550, 445, 600, 356, 680, 345, 12, 100, [
+              [578, 400, 648, 409, 661, 426, 3, 80]
+            ]],
+            [539, 281, 537, 248, 534, 217, 3, 40],
+            [546, 397, 413, 247, 328, 244, 9, 80, [
+              [427, 286, 383, 253, 371, 205, 2, 40],
+              [498, 345, 435, 315, 395, 330, 4, 60]
+            ]],
+            [546, 357, 608, 252, 678, 221, 6, 100, [
+              [590, 293, 646, 277, 648, 271, 2, 80]
+            ]]
+          ]]
+        ],
+        bloom: { num: 700, width: 1080, height: 650 },
+        footer: { width: 1200, height: 5, speed: 10 }
+      };
+
+      var tree = new Tree(canvas[0], width, height, opts);
+      var seed = tree.seed;
+      var foot = tree.footer;
+      var hold = 1;
+
+      canvas.click(function(e) {
+        var offset = canvas.offset();
+        var x = e.pageX - offset.left;
+        var y = e.pageY - offset.top;
+        if (seed.hover(x, y)) {
+          hold = 0;
+          canvas.unbind("click");
+          canvas.unbind("mousemove");
+          canvas.removeClass('hand');
+          // start music on user interaction
+          startMusic();
+        }
+      }).mousemove(function(e) {
+        var offset = canvas.offset();
+        var x = e.pageX - offset.left;
+        var y = e.pageY - offset.top;
+        canvas.toggleClass('hand', seed.hover(x, y));
+      });
+
+      var seedAnimate = eval(Jscex.compile("async", function() {
+        seed.draw();
+        while (hold) { $await(Jscex.Async.sleep(10)); }
+        // hide hint once clicked
+        $('#seed-hint').fadeOut(400);
+        while (seed.canScale()) { seed.scale(0.95); $await(Jscex.Async.sleep(10)); }
+        while (seed.canMove())  { seed.move(0, 2);  foot.draw(); $await(Jscex.Async.sleep(10)); }
+      }));
+
+      var growAnimate = eval(Jscex.compile("async", function() {
+        do { tree.grow(); $await(Jscex.Async.sleep(10)); } while (tree.canGrow());
+      }));
+
+      var flowAnimate = eval(Jscex.compile("async", function() {
+        do { tree.flower(2); $await(Jscex.Async.sleep(10)); } while (tree.canFlower());
+      }));
+
+      var moveAnimate = eval(Jscex.compile("async", function() {
+        tree.snapshot("p1", 240, 0, 610, 680);
+        while (tree.move("p1", 500, 0)) { foot.draw(); $await(Jscex.Async.sleep(10)); }
+        foot.draw();
+        tree.snapshot("p2", 500, 0, 610, 680);
+        canvas.parent().css("background", "url(" + tree.toDataURL('image/png') + ")");
+        canvas.css("background", "#0d0d1a");
+        $await(Jscex.Async.sleep(300));
+        canvas.css("background", "none");
+      }));
+
+      var textAnimate = eval(Jscex.compile("async", function() {
+        $("#code").show().typewriter();
+        $await(Jscex.Async.sleep(9000));
+      }));
+
+      var runAsync = eval(Jscex.compile("async", function() {
+        $await(seedAnimate());
+        $await(growAnimate());
+        $await(flowAnimate());
+        $await(moveAnimate());
+        $await(textAnimate());
+        launchBdaySite();
+      }));
+
+      runAsync().start();
+    })();
+
+    function launchBdaySite() {
+      // fade out intro
+      var intro = document.getElementById('intro-screen');
+      intro.classList.add('fade-out');
+
+      // show bday site
+      var site = document.getElementById('bday-site');
+      site.style.display = 'block';
+      setTimeout(function() {
+        site.classList.add('visible');
+        intro.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        // show music button
+        document.getElementById('music-btn').style.display = 'flex';
+        startConfetti();
+        setTimeout(stopConfetti, 6000);
+        initBdaySite();
+      }, 1200);
+    }
+
+    // ---- AUDIO ----
+    var audio   = document.getElementById('bg-music');
+    var playing = false;
+
+    function startMusic() {
+      audio.volume = 0.35;
+      audio.play().then(function() {
+        playing = true;
+        updateMusicBtn();
+      }).catch(function() {});
+    }
+
+    function toggleMusic() {
+      if (playing) { audio.pause(); playing = false; }
+      else         { audio.play();  playing = true; }
+      updateMusicBtn();
+    }
+
+    function updateMusicBtn() {
+      document.getElementById('music-btn').textContent = playing ? '🔊' : '🔇';
+    }
+
+    // ---- BDAY SITE INIT ----
+    function initBdaySite() {
+      // stars
+      var starsEl = document.getElementById('stars-bg');
+      for (var i = 0; i < 80; i++) {
+        var s    = document.createElement('div');
+        s.className = 'star';
+        var size = Math.random() * 2.5 + 0.5;
+        s.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;animation-delay:'+Math.random()*3+'s;animation-duration:'+(1.5+Math.random()*2)+'s';
+        starsEl.appendChild(s);
+      }
+
+      // floating hearts
+      var heartsEl    = document.getElementById('hearts-container');
+      var heartEmojis = ['🩷','💜','✨','🌸','💫','💕'];
+      for (var j = 0; j < 12; j++) {
+        var h   = document.createElement('div');
+        h.className = 'fheart';
+        h.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+        var dur = 8 + Math.random() * 10;
+        h.style.cssText = 'left:'+Math.random()*100+'%;animation-duration:'+dur+'s;animation-delay:'+Math.random()*dur+'s;font-size:'+(0.8+Math.random())+'rem';
+        heartsEl.appendChild(h);
+      }
+
+      // countdown
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+
+      // nav dots observer
+      var sectionIds = ['s0','s1','s2','s3','s4','s5','s6','memories-reel'];
+      var sections   = sectionIds.map(function(id) { return document.getElementById(id); });
+      var dots       = document.querySelectorAll('.nav-dot');
+
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          if (e.isIntersecting) {
+            var idx = sections.indexOf(e.target);
+            dots.forEach(function(d, i) { d.classList.toggle('active', i === idx); });
+          }
+        });
+      }, { threshold: 0.3 });
+
+      sections.forEach(function(s) { if (s) obs.observe(s); });
+
+      // init slideshow
+      initSlideshow();
+    }
+
+    window.scrollToSection = function(i) {
+      var ids = ['s0','s1','s2','s3','s4','s5','s6','memories-reel'];
+      document.getElementById(ids[i]).scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // ---- SLIDESHOW ----
+    var currentSlide = 0;
+    var slides, slideDots, totalSlides;
+
+    function initSlideshow() {
+      slides      = document.querySelectorAll('.slide');
+      totalSlides = slides.length;
+      var dotsEl  = document.getElementById('slide-dots');
+      dotsEl.innerHTML = '';
+
+      slides.forEach(function(_, i) {
+        var d = document.createElement('div');
+        d.className = 'slide-dot' + (i === 0 ? ' active' : '');
+        d.onclick = (function(idx) { return function() { goToSlide(idx); }; })(i);
+        dotsEl.appendChild(d);
+      });
+
+      slideDots = document.querySelectorAll('.slide-dot');
+      document.getElementById('slide-counter').textContent = '1 / ' + totalSlides;
+      updateCaption();
+
+      // auto-advance every 4s (pauses on video slides)
+      setInterval(function() {
+        var cur = slides[currentSlide];
+        if (!cur.dataset.type || cur.dataset.type !== 'video') {
+          nextSlide();
+        }
+      }, 4000);
+    }
+
+    function goToSlide(idx) {
+      // pause any playing video on current slide
+      var curVideo = slides[currentSlide].querySelector('video');
+      if (curVideo) { curVideo.pause(); }
+
+      slides[currentSlide].classList.remove('active');
+      slideDots[currentSlide].classList.remove('active');
+      currentSlide = (idx + totalSlides) % totalSlides;
+      slides[currentSlide].classList.add('active');
+      slideDots[currentSlide].classList.add('active');
+      document.getElementById('slide-counter').textContent = (currentSlide + 1) + ' / ' + totalSlides;
+      updateCaption();
+    }
+
+    function nextSlide() { goToSlide(currentSlide + 1); }
+    function prevSlide() { goToSlide(currentSlide - 1); }
+
+    function updateCaption() {
+      var cap = slides[currentSlide].dataset.caption || '';
+      document.getElementById('slide-caption').textContent = cap;
+    }
+
+    // keyboard arrow navigation
+    document.addEventListener('keydown', function(e) {
+      if (document.getElementById('bday-site').classList.contains('visible')) {
+        if (e.key === 'ArrowRight') nextSlide();
+        if (e.key === 'ArrowLeft')  prevSlide();
+      }
+    });
+
+    function updateCountdown() {
+      var now  = new Date();
+      var bday = new Date(now.getFullYear(), 5, 18);
+      if (now > bday) bday.setFullYear(bday.getFullYear() + 1);
+      var diff = bday - now;
+
+      if (diff <= 0) {
+        document.getElementById('countdown-title').textContent = "🎉 IT'S HER BIRTHDAY TODAY!!! 🎉";
+        ['cd-days','cd-hours','cd-mins','cd-secs'].forEach(function(id) { document.getElementById(id).textContent = '00'; });
+        return;
+      }
+
+      document.getElementById('cd-days').textContent  = String(Math.floor(diff / 86400000)).padStart(2,'0');
+      document.getElementById('cd-hours').textContent = String(Math.floor((diff % 86400000) / 3600000)).padStart(2,'0');
+      document.getElementById('cd-mins').textContent  = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
+      document.getElementById('cd-secs').textContent  = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
+    }
+
+    // ---- CONFETTI ----
+    var cCanvas  = document.getElementById('confetti-canvas');
+    var cCtx     = cCanvas.getContext('2d');
+    var pieces   = [];
+    var animFrame;
+    var cRunning = false;
+    var cColors  = ['#f472b6','#a78bfa','#facc15','#44e5ff','#fb7185','#34d399'];
+
+    function resizeCanvas() { cCanvas.width = window.innerWidth; cCanvas.height = window.innerHeight; }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    function startConfetti() {
+      cRunning = true; pieces = [];
+      for (var i = 0; i < 160; i++) {
+        pieces.push({
+          x: Math.random() * cCanvas.width, y: Math.random() * cCanvas.height - cCanvas.height,
+          w: 6 + Math.random() * 8, h: 8 + Math.random() * 10,
+          r: Math.random() * Math.PI * 2, dr: (Math.random() - 0.5) * 0.1,
+          vy: 2 + Math.random() * 3, vx: (Math.random() - 0.5) * 2,
+          color: cColors[Math.floor(Math.random() * cColors.length)]
+        });
+      }
+      animateConfetti();
+    }
+
+    function animateConfetti() {
+      if (!cRunning) return;
+      cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+      pieces.forEach(function(p) {
+        p.y += p.vy; p.x += p.vx; p.r += p.dr;
+        cCtx.save();
+        cCtx.translate(p.x, p.y);
+        cCtx.rotate(p.r);
+        cCtx.fillStyle = p.color;
+        cCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        cCtx.restore();
+      });
+      pieces = pieces.filter(function(p) { return p.y < cCanvas.height + 20; });
+      if (pieces.length > 0) { animFrame = requestAnimationFrame(animateConfetti); }
+      else { cRunning = false; }
+    }
+
+    function stopConfetti() {
+      cRunning = false;
+      cancelAnimationFrame(animFrame);
+      cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+    }
+  </script>
+
+</body>
+</html>
